@@ -1,0 +1,17 @@
+{
+    "components": [
+        {
+            "name": "firewall_for_DDos" ,
+            "dependencies": [
+                "python",
+                "pyauthenticator",
+                "pyrouting",
+                "pytopology",
+                "monitoring",
+                "discovery",
+                "monitoring"
+            ],
+            "python": "nox.netapps.firewall.pyfirewall"
+        }
+    ]
+}

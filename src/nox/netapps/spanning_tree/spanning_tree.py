@@ -38,6 +38,7 @@ MIN_LLDP_SEND_PERIOD = 0.05
 
 log = logging.getLogger('spanning_tree')
 
+
 class Spanning_Tree(Component):
 
     def __init__(self, ctxt):
@@ -59,7 +60,11 @@ class Spanning_Tree(Component):
 
     def debugPrint(self, text):
         if (self.debug):
-            log.debug(text)
+            #---------------------
+            #Modified 8-5
+            #--------------------
+            pass
+            #log.debug(text)
 
     def install(self):
         # Ensure LLDP queries occur more frequently by default.
@@ -457,12 +462,18 @@ class Spanning_Tree(Component):
             pass
 
         # Check if the port is a flood port
-        log.warn("%s : %s" %(dpid, packet))
+        #-----------------------------------
+        #Modified 8-15
+        #-----------------------------------
+        #log.warn("%s : %s" %(dpid, packet))
         try:
             if self.datapaths[dpid][inport]['flood']:
                 return CONTINUE
             else:
-                log.warn("STOP")
+                #---------------
+                #Modified 8-5
+                #--------------
+                #log.warn("STOP")
                 return STOP
         except KeyError:
             return STOP

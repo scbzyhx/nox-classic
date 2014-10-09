@@ -406,6 +406,21 @@ class discovery(Component):
                 return True
         return False
 
+    #----------------------------------------------------------------------
+    #    Public API added by YHX nju email:scbzyhx@dislab.nju.edu
+    #---------------------------------------------------------------------
+    def get_switch_neighbor_by_port(self,dpid,port):
+        """
+        Return None if (dpid,port) designates a port that has now neighbor switches
+        otherwise return the neighbor switches and its port
+        """
+        for dp1,port1,dp2,port2 in self.adjacency_list:
+            if dp1 == dpid and port1 == port:
+                return (dp2,port2)
+            if dp2 == dpid and port2 == port:
+                return (dp1,port1)
+        return None
+
 
 def getFactory():
     class Factory:

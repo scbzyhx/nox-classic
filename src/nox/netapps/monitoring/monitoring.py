@@ -382,6 +382,8 @@ class Monitoring(Component):
         body.match = match
         body.table_id = table_id
         body.out_port = openflow.OFPP_NONE
+        #print match
+        #print body.pack()
         request.header.length = len(request.pack()) + len(body.pack())
         self.send_openflow_command(dpid, request.pack() + body.pack())
 

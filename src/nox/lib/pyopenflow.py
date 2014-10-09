@@ -1800,6 +1800,7 @@ class ofp_flow_stats_request:
         """Sanity check
         """
         if(not isinstance(self.match, ofp_match)):
+            print 'check failed'
             return (False, "self.match is not class ofp_match as expected.")
         return (True, None)
 

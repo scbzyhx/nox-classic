@@ -50,16 +50,22 @@ class SampleRouting(Component):
         self.register_handler(Flow_in_event.static_get_name(),
                               self.handle_flow_in)
                               
-        self.register_for_barrier_reply(self.handle_barrier_reply)       
+        #self.register_for_barrier_reply(self.handle_barrier_reply)       
+        self.register_for_packet_in(self.handle_packet_in)
         
         # Register for json messages from the gui
         self.register_handler( JSONMsg_event.static_get_name(), \
                          lambda event: self.handle_jsonmsg_event(event))
+        self.register_for_error(self.error_msg_handler)
+    def handle_packet_in(self,dpid,in_port,reason,total_frame_len,buf_id,packet):
+        print "pakcet_in",dpid,buf_id
                          
-                              
+    def error_msg_handler(self,dpid,types,code,data,xid):
+        print (dpid,types,code,xid,data)
 
     def handle_flow_in(self, event):
-    
+        print 'flow in '
+        print "flow_in",event.datapath_id,event.buffer_id
     
         if not event.active:
             return CONTINUE
@@ -73,8 +79,10 @@ class SampleRouting(Component):
             inport = event.src_location['port']
             sloc = sloc | (inport << 48)
         else:
-            route.id.src = netinet.create_datapathid_from_host(sloc & DP_MASK)
-            inport = (sloc >> 48) & PORT_MASK
+            #route.id.src = netinet.create_datapathid_from_host(sloc & DP_MASK)
+            #inport = (sloc >> 48) & PORT_MASK
+            pass
+        
         if len(event.route_destinations) > 0:
             dstlist = event.route_destinations
         else:
@@ -93,14 +101,15 @@ class SampleRouting(Component):
                 dloc = dst
                 route.id.dst = netinet.create_datapathid_from_host(dloc & DP_MASK)
                 outport = (dloc >> 48) & PORT_MASK
+
             if dloc == 0:
                 continue
             if self.routing.get_route(route):
                 checked = True
                 if self.routing.check_route(route, inport, outport):
-                    log.debug('Found route %s.' % hex(route.id.src.as_host())+\
-                            ':'+str(inport)+' to '+hex(route.id.dst.as_host())+\
-                            ':'+str(outport))
+                    #log.debug('Found route %s.' % hex(route.id.src.as_host())+\
+                    #        ':'+str(inport)+' to '+hex(route.id.dst.as_host())+\
+                    #        ':'+str(outport))
                     if route.id.src == route.id.dst:
                         firstoutport = outport
                     else:
@@ -127,7 +136,7 @@ class SampleRouting(Component):
                     #log.debug("Sending BARRIER to switches:")
                     # Add barrier xids
                     for dpid in p[1:len(p)-1]:
-                        log.debug("Sending barrier to %s", dpid)
+                    #    log.debug("Sending barrier to %s", dpid)
                         pending_route.append(self.send_barrier(int(dpid,16)))
                     # Add packetout info
                     pending_route.append([indatapath, inport, event])
@@ -135,15 +144,15 @@ class SampleRouting(Component):
                     self.pending_routes.append(pending_route)
                            
                     # send path to be highlighted to GUI
-                    self.send_to_gui("highlight",p)
+                    #self.send_to_gui("highlight",p)
                     
                     # Send packet out (do it after receiving barrier(s))
                     if indatapath == route.id.src or \
                         pyrouting.dp_on_route(indatapath, route):
-                        pass
-                        #self.routing.send_packet(indatapath, inport, \
-                        #    openflow.OFPP_TABLE,event.buffer_id,event.buf,"", \
-                        #    False, event.flow)
+                        #pass
+                        self.routing.send_packet(indatapath, inport, \
+                            openflow.OFPP_TABLE,event.buffer_id,event.buf,"", \
+                            False, event.flow)
                     else:
                         log.debug("Packet not on route - dropping.")
                     return CONTINUE
@@ -162,8 +171,9 @@ class SampleRouting(Component):
                         BROADCAST_TIMEOUT, "", \
                         event.flow.dl_type == htons(ethernet.IP_TYPE))
             else:
+                print 'flood unicast'
                 inport = ntohs(event.flow.in_port)
-                log.debug("Flooding")
+                #log.debug("Flooding")
                 self.routing.send_packet(indatapath, inport, \
                     openflow.OFPP_FLOOD, \
                     event.buffer_id, event.buf, "", \
@@ -172,7 +182,7 @@ class SampleRouting(Component):
         else:
             log.debug("Dropping packet")
 
-        return CONTINUE
+        return STOP
 
     def getInterface(self):
         return str(SampleRouting)
