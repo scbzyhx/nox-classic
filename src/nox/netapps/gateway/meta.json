@@ -1,0 +1,11 @@
+{
+    "components": [
+        {
+            "name": "gateway" ,
+            "dependencies": [
+                "python"
+            ],
+            "python": "nox.netapps.gateway.gateway"
+        }
+    ]
+}
