@@ -55,12 +55,14 @@ class pyGateway(Component):
         Component.__init__(self, ctxt)
         self.gates = {}
         self.dp = {}
+        self.enableTimer = True
 
     def install(self):
         '''start a thread to receive message from victim servers
            and response to the request
         '''
         self.register_for_datapath_join(self.handleDatapathJoinIn)
+        self.register_for_datapath_leave(self.handleDatapathLeave)
         self.register_for_packet_in(self.handlePacketIn)
         
         
@@ -71,8 +73,8 @@ class pyGateway(Component):
            for each gate
         '''
         #add a flow rule and sent ARP test,once get ARP request
-        #if dpid != DPID:
-        #    return CONTINUE
+        if dpid != DPID:
+            return CONTINUE
         self.dp[dpid] = {}
         #dp[dpid][port_no][hw_addr]
         for port in stats['ports']:
@@ -85,11 +87,18 @@ class pyGateway(Component):
         actions = [[of.OFPAT_OUTPUT,[MAXLEN_ETH,of.OFPP_CONTROLLER]]]
         self.install_datapath_flow(dpid,attrs,PERMANENT,PERMANENT,actions)
         #tempo
-        self.gates[ipstr_to_int('192.168.1.1')] = {'mac':0,'port':0}
-        self.gates[ipstr_to_int('192.168.1.2')] = {'mac':0,'port':0}
+        self.gates[ipstr_to_int('192.168.1.1')] = {'mac':0,'port':0,'dpid':0}
+        self.gates[ipstr_to_int('192.168.1.2')] = {'mac':0,'port':0,'dpid':0}
 
 
         self.post_callback(INTERVAL,self.sendARPRequest)
+        return CONTINUE
+    def handleDatapathLeave(self,dpid):
+        if dpid == DPID:
+            self.gates = {}
+            self.enableTimer = False
+            self.dp = {}
+            
         return CONTINUE
 
         
@@ -133,7 +142,7 @@ class pyGateway(Component):
         if packet.type != ethernet.ARP_TYPE or reason != of.OFPR_ACTION:
             return CONTINUE
         #print 'reason = ',reason,"  ",of.OFPR_ACTION
-        if self.receiveARPResponse(packet,inport):
+        if self.receiveARPResponse(packet,dpid,inport):
             return STOP
         return CONTINUE
         
@@ -145,7 +154,11 @@ class pyGateway(Component):
            in fact, once get reply, You just needs to unicast instead of broadcast
         '''
         ethp = ethernet()
-        dpid = self.dp.keys()[0]
+        #dpid = 0
+        if len(self.dp.keys()) > 0:
+            dpid = self.dp.keys()[0]
+        else:
+            return
 
         for port in self.dp[dpid].keys():
             if port > 1000:
@@ -172,9 +185,9 @@ class pyGateway(Component):
                 self.send_openflow_packet(dpid,ethp.tostring(),port)
         
         print 'send Request'
-
-        self.post_callback(INTERVAL,self.sendARPRequest)
-    def receiveARPResponse(self,packet,inport):
+        if self.enableTimer:
+            self.post_callback(INTERVAL,self.sendARPRequest)
+    def receiveARPResponse(self,packet,dpid,inport):
         '''when received ARP response packet, parsed here
         '''
         arpp = packet.find('arp')
@@ -185,11 +198,14 @@ class pyGateway(Component):
         gatehw = arpp.hwsrc
         if gateip in self.gates.keys():
             if gatehw == self.gates[gateip]['mac'] and \
-                self.gates[gateip]['port'] == inport:
+                self.gates[gateip]['port'] == inport and \
+                self.gates[gateip]['dpid'] == dpid:
                 #print 'direct return'
                 return
             self.gates[gateip]['mac'] = gatehw
             self.gates[gateip]['port'] = inport
+            self.gates[gateip]['dpid'] = dpid
+            print self.gates
 
         return True
 
