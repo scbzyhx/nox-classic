@@ -26,7 +26,7 @@ import socket
 import thread
 
 log = logging.getLogger('nox.netapps.gateway.gateway')
-INTERVAL = 5
+INTERVAL = 10
 U32_MAX = 0xffffffff
 DP_MASK = 0xffffffffffff
 PORT_MASK = 0xffff
@@ -93,15 +93,14 @@ class pyGateway(Component):
 
         self.post_callback(INTERVAL,self.sendARPRequest)
         return CONTINUE
+
     def handleDatapathLeave(self,dpid):
         if dpid == DPID:
             self.gates = {}
             self.enableTimer = False
             self.dp = {}
             
-        return CONTINUE
-
-        
+        return CONTINUE       
 
     def getInterface(self):
         return str(pyGateway)
@@ -113,6 +112,15 @@ class pyGateway(Component):
         '''To get all gates' informations
         '''
         return self.gates
+    def getDpidMacPort(self,ip):
+        
+        if type(ip) == type(''):
+            return (self.gates[ipstr_to_int(ip)]['dpid'],\
+            self.gates[ipstr_to_int(ip)]['mac'],\
+            self.gates[ipstr_to_int(ip)]['port'])
+        elif type(ip) == type(1):
+            return (self.gates[ip]['dpid'],self.gates[ip]['mac'],self.gates[ip]['port'])
+        return (None,None,None)
 
     def getMac(self,ip):
         if type(ip) == type(''):
@@ -127,15 +135,26 @@ class pyGateway(Component):
         elif type(ip) == type(1):
             return self.gates[ip]['port']
         return None
+    def getDhcp(self):
+        if len(self.gates.keys()) > 0:
+            ip = self.gates.keys()[0]
+            return (self.gates[ip]['dpid'],ip,self.gates[ip]['port'])
+        else:
+            return None
 
     #
     #Threee Interfaces are proposed
     #
 
     def getGateSets(self):
+        '''TODO: To be changed here
+        '''
         return ["192.168.1.1",'192.168.1.2']
     def getControllerIP(self):
+        '''TODO: To be changed here
+        '''
         return ipstr_to_int("192.168.1.3")
+
     def handlePacketIn(self,dpid,inport,reason,frameLen,bufId,packet):
         if not packet.parsed:
             packet.parese()
@@ -184,9 +203,9 @@ class pyGateway(Component):
 
                 self.send_openflow_packet(dpid,ethp.tostring(),port)
         
-        print 'send Request'
         if self.enableTimer:
             self.post_callback(INTERVAL,self.sendARPRequest)
+
     def receiveARPResponse(self,packet,dpid,inport):
         '''when received ARP response packet, parsed here
         '''

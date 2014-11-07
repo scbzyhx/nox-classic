@@ -3,7 +3,9 @@
         {
             "name": "homerouting" ,
             "dependencies": [
-                "python"
+                "python",
+                "gateway",
+                "pyswitch"
             ],
             "python": "nox.netapps.hroute.pyhroute"
         }

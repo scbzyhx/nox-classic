@@ -41,6 +41,7 @@ from socket import htons
 from struct import unpack
 
 logger = logging.getLogger('nox.coreapps.examples.pyswitch')
+logger.setLevel(logging.CRITICAL)
 
 # Global pyswitch instance 
 inst = None
@@ -130,6 +131,7 @@ def datapath_join_callback(dpid, stats):
 # --
 def packet_in_callback(dpid, inport, reason, len, bufid, packet):
 
+    #print 'packet_in in pyswitch'
     if not packet.parsed:
         log.msg('Ignoring incomplete packet',system='pyswitch')
         
@@ -158,6 +160,8 @@ class pyswitch(Component):
         inst = self
 
     def install(self):
+        #print 'installed pyswitch'
+        logger.info('haha')
         inst.register_for_packet_in(packet_in_callback)
         inst.register_for_datapath_leave(datapath_leave_callback)
         inst.register_for_datapath_join(datapath_join_callback)

@@ -46,7 +46,9 @@
                 "ctlflood",
                 "switch",
                 "hub",
-                "cswitchstats"
+                "cswitchstats",
+                "homerouting",
+                "pyswitch"
                 ],
             "Flow_in_event": [
                 "sepl_enforcer",
