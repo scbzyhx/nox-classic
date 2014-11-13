@@ -61,6 +61,7 @@ class pyGateway(Component):
         '''start a thread to receive message from victim servers
            and response to the request
         '''
+        log.warning("gateway installed")
         self.register_for_datapath_join(self.handleDatapathJoinIn)
         self.register_for_datapath_leave(self.handleDatapathLeave)
         self.register_for_packet_in(self.handlePacketIn)
@@ -72,7 +73,9 @@ class pyGateway(Component):
            add a flow rule and send ARP requests, once get ARP reply then store it 
            for each gate
         '''
+        print 'datapath Join'
         #add a flow rule and sent ARP test,once get ARP request
+        print dpid
         if dpid != DPID:
             return CONTINUE
         self.dp[dpid] = {}
@@ -113,33 +116,46 @@ class pyGateway(Component):
         '''
         return self.gates
     def getDpidMacPort(self,ip):
-        
-        if type(ip) == type(''):
-            return (self.gates[ipstr_to_int(ip)]['dpid'],\
-            self.gates[ipstr_to_int(ip)]['mac'],\
-            self.gates[ipstr_to_int(ip)]['port'])
-        elif type(ip) == type(1):
-            return (self.gates[ip]['dpid'],self.gates[ip]['mac'],self.gates[ip]['port'])
-        return (None,None,None)
+        try:
+            if type(ip) == type(''):
+                #print self.gates.keys()
+                return (self.gates[ipstr_to_int(ip)]['dpid'],\
+                self.gates[ipstr_to_int(ip)]['mac'],\
+                self.gates[ipstr_to_int(ip)]['port'])
+            elif type(ip) == type(1):
+                return (self.gates[ip]['dpid'],self.gates[ip]['mac'],self.gates[ip]['port'])
+            return (None,None,None)
+        except KeyError as e:
+            return (None,None,None)
 
     def getMac(self,ip):
-        if type(ip) == type(''):
-            return self.gates[ipstr_to_int(ip)]['mac']
-        elif type(ip) == type(1):
-            return self.gates[ip]['mac']
-        return None
+        try:
+            if type(ip) == type(''):
+                return self.gates[ipstr_to_int(ip)]['mac']
+            elif type(ip) == type(1):
+                return self.gates[ip]['mac']
+            return None
+        except KeyError as e:
+            return None
     
-    def getPort(self,ip):        
-        if type(ip) == type(''):
-            return self.gates[ipstr_to_int(ip)]['port']
-        elif type(ip) == type(1):
-            return self.gates[ip]['port']
-        return None
+    def getPort(self,ip):
+        try:
+            if type(ip) == type(''):
+                return self.gates[ipstr_to_int(ip)]['port']
+            elif type(ip) == type(1):
+                return self.gates[ip]['port']
+            return None
+        except KeyError as e:
+            return None
+
     def getDhcp(self):
-        if len(self.gates.keys()) > 0:
-            ip = self.gates.keys()[0]
-            return (self.gates[ip]['dpid'],ip,self.gates[ip]['port'])
-        else:
+        try:
+            if len(self.gates.keys()) > 0:
+                ip = self.gates.keys()[0]
+                return (self.gates[ip]['dpid'],ip,self.gates[ip]['port'])
+            else:
+                return None
+        except KeyError as e:
             return None
 
     #

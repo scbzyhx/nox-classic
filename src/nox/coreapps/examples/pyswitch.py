@@ -84,7 +84,7 @@ def forward_l2_packet(dpid, inport, packet, buf, bufid):
         prt = inst.st[dpid][dstaddr]
         if  prt[0] == inport:
             log.err('**warning** learned port = inport', system="pyswitch")
-            inst.send_openflow(dpid, bufid, buf, openflow.OFPP_FLOOD, inport)
+            inst.send_openflow(dpid, bufid, buf, openflow.OFPP_ALL, inport) #FROMM FLOOD TO all
         else:
             # We know the outport, set up a flow
             log.msg('installing flow for ' + str(packet), system="pyswitch")
@@ -97,7 +97,7 @@ def forward_l2_packet(dpid, inport, packet, buf, bufid):
                                        inport, buf)
     else:    
         # haven't learned destination MAC. Flood 
-        inst.send_openflow(dpid, bufid, buf, openflow.OFPP_FLOOD, inport)
+        inst.send_openflow(dpid, bufid, buf, openflow.OFPP_ALL, inport)
         
 # --
 # Responsible for timing out cache entries.

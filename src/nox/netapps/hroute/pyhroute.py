@@ -50,6 +50,7 @@ MAXLEN_ETH = 1500
 CACHE_TIMEOUT = 5
 
 #def recv_packet)
+TEST_DEBUG = True
 
 
 class pyhroute(Component):
@@ -92,6 +93,7 @@ class pyhroute(Component):
         if eth.find('dhcp') != None:
             #print eth.find('dhcp')
             #self.handleDhcp(sloc,inport,bufid,eth)
+            print eth.find('dhcp')
             return CONTINUE
         else:
             if eth.type == ethernet.ARP_TYPE:
@@ -103,11 +105,16 @@ class pyhroute(Component):
                 if self.isLocal(ip.dstip):
                     "Just Do nothing here, To add latter"
                     #print ip
+                    print 'isLocal, ',ip_to_str(ip.srcip),'  ',inport 
+                    #print ip
                     return CONTINUE #leave to pyswitch
                 else:
                     "Ignore to cache server here now, just to the Internet"               
                     #self.randomRoute(sloc,inport,eth,bufid)
-                    self.route(sloc,inport,eth,bufid)
+                    if TEST_DEBUG:
+                        self.ipLayerRoute(sloc,inport,eth,bufid)
+                    else:
+                        self.route(sloc,inport,eth,bufid)
                     return STOP
             '''
                 1. To local network
@@ -139,11 +146,12 @@ class pyhroute(Component):
             (k,_) = self.routeTable.getDefaultRoute()
         else:
             k,_ = re
-        log.warning(re)
+        log.warning(k)
 
         
         kk,mac,out = self.gates.getDpidMacPort(k)
         if sloc != kk:#g[ipstr_to_int(k)]['dpid']:
+            log.error('real dpid = %d',sloc,'hope dpid = %d', kk)
             raise NotImplemented
 
         flow[core.IN_PORT] = inport
@@ -159,6 +167,44 @@ class pyhroute(Component):
         actions = [[of.OFPAT_OUTPUT,[0,inport]]]
         
         self.install_datapath_flow(sloc,attrs,CACHE_TIMEOUT,CACHE_TIMEOUT,actions)        
+    
+#
+#To Test
+#
+    def ipLayerRoute(self,sloc,inport,packet,bufid):
+        flow = {}
+        ip = packet.find('ipv4')
+        if ip == None:
+            raise NotImplemented
+
+        re = self.routeTable.getRoute(ip.dstip)
+        if re == None:
+            (k,_) = self.routeTable.getDefaultRoute()
+        else:
+            k,_ = re
+        #log.warning(re)
+
+        
+        kk,mac,out = self.gates.getDpidMacPort(k)
+        if sloc != kk:#g[ipstr_to_int(k)]['dpid']:
+            print 'real dpid = %d, hope dpid = %d' % (sloc, kk)
+            raise NotImplemented
+
+        flow[core.NW_DST] = ip.dstip
+        flow[core.IN_PORT] = inport
+        
+        actions = [[of.OFPAT_OUTPUT,[0,out]]]
+        self.install_datapath_flow(sloc,flow,10,10,actions,bufid,of.OFP_DEFAULT_PRIORITY,inport)
+
+        
+        #reverse flow
+        attrs = {}
+
+        attrs[core.NW_DST] = ip.srcip#g[k]['port'] 
+        attrs[core.IN_PORT] = out
+        actions = [[of.OFPAT_OUTPUT,[0,inport]]]
+        
+        self.install_datapath_flow(sloc,attrs,10,10,actions)        
 
 
     def handleDhcp(self,sloc,inport,bufid,packet):
