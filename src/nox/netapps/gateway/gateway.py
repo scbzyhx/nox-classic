@@ -93,6 +93,8 @@ class pyGateway(Component):
         self.gates[ipstr_to_int('192.168.1.1')] = {'mac':0,'port':0,'dpid':0}
         self.gates[ipstr_to_int('192.168.1.2')] = {'mac':0,'port':0,'dpid':0}
 
+        
+        self.sendARPRequest()
 
         self.post_callback(INTERVAL,self.sendARPRequest)
         return CONTINUE

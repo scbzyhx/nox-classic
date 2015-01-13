@@ -1,0 +1,12 @@
+{
+    "components": [
+        {
+            "name": "yhx_test" ,
+            "dependencies": [
+                "python",
+                "pyswitch"
+            ],
+            "python": "nox.netapps.yhx_test.test"
+        }
+    ]
+}

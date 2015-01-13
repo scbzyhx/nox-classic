@@ -23,7 +23,6 @@ from socket import ntohs,htons
 import logging
 import socket
 import thread
-import random
 #from twisted.python import log
 
 from nox.netapps.gateway.gateway import *
@@ -152,7 +151,6 @@ class pyhroute(Component):
             (k,_) = defaultRoute#self.routeTable.getDefaultRoute()
         else:
             k,_ = re
-        #if random.random() > 0.8 :
         k = "192.168.1.2"
         log.warning(k)
 
@@ -165,16 +163,13 @@ class pyhroute(Component):
         flow[core.IN_PORT] = inport
         
         actions = [[of.OFPAT_OUTPUT,[0,out]]]
-         
-        #print("k  :")
-        #print(k)
-        #print(defaultRoute[0])
+            
         #to secondary gateway
         if k != defaultRoute[0] :
             # change DST MAC
-            actions.append([of.OFPAT_SET_DL_DST,mac])
+            actions.append([of.OFPAT_SET_DL_DST,defaultMac])
 
-        self.install_datapath_flow(sloc,flow,CACHE_TIMEOUT,0,actions,bufid,of.OFP_DEFAULT_PRIORITY,inport)
+        self.install_datapath_flow(sloc,flow,CACHE_TIMEOUT,CACHE_TIMEOUT,actions,bufid,of.OFP_DEFAULT_PRIORITY,inport)
 
         
         #reverse flow
@@ -187,11 +182,11 @@ class pyhroute(Component):
         if k != defaultRoute[0]:
             #attrs[core.DL_SRC] = defaultMac
             #the core.DL_SRC in reversed flow is the mac of first gateway, so 
-            actions.append([of.OFPAT_SET_DL_SRC,attrs[core.DL_SRC]]) 
+            actions.append([of.OFPAT_SET_DL_SRC,attrs[core.DL_SRC]) 
             #change flow, attention
             attrs[core.DL_SRC] = defaultMac
         
-        self.install_datapath_flow(sloc,attrs,CACHE_TIMEOUT,0,actions)        
+        self.install_datapath_flow(sloc,attrs,CACHE_TIMEOUT,CACHE_TIMEOUT,actions)        
     
 #
 #To Test

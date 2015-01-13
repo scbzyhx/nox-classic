@@ -5,7 +5,8 @@
             "dependencies": [
                 "python",
                 "gateway",
-                "pyswitch"
+                "pyswitch",
+                "monitoring"
             ],
             "python": "nox.netapps.hroute.pyhroute"
         }
